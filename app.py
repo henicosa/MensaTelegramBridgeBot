@@ -22,7 +22,7 @@ def display_log(path):
 def bot_log():
     site = "<h1>Telegram Bot Log</h1>"
 
-    site += "<div id=\"log\">" + display_log("../bot/botlog.txt") + "</div>"
+    site += "<div id=\"log\">" + display_log("bot/botlog.txt") + "</div>"
 
     return site
 
@@ -30,14 +30,14 @@ def bot_log():
 def access_log():
     site = "<h1>Telegram Access Log</h1>"
 
-    site += "<div id=\"log\">" + display_log("../bot/access_log.txt") + "</div>"
+    site += "<div id=\"log\">" + display_log("bot/access_log.txt") + "</div>"
 
     return site
 
 @app.route('/init')
 def init():
     global is_bot_running
-    subprocess.Popen(["python", "../bot/bot.py"]) 
+    subprocess.Popen(["python", "bot/bot.py"]) 
     site = "<h1>initiate Bot!</h1>"
     is_bot_running = True
     return site

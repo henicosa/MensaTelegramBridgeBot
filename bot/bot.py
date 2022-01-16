@@ -30,7 +30,7 @@ from telegram.ext.filters import Filters
 import time
 
 import logging
-logging.basicConfig(filename="../bot/botlog.txt",
+logging.basicConfig(filename="bot/botlog.txt",
                             filemode='a',
                             format='%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s',
                             datefmt='%H:%M:%S',
@@ -42,7 +42,7 @@ bot = None
 
 def log_access(update, action):
     # access log
-    access_log = open("../bot/access_log.txt", "a")
+    access_log = open("bot/access_log.txt", "a")
     current_time = time.localtime()
     access_log.write(time.strftime('%Y-%m-%d %H:%M:%S GMT', current_time) + " " + update.message.from_user.first_name + " queried bot with " + action + "\n")
     access_log.close()
@@ -136,7 +136,7 @@ def folge(update: Update, context: CallbackContext):
     log_access(update, "folge " + folgennummer)
     
 headers = {'user-agent': 'sdltelegrambridgebot_2022'}
-telegram_bot_token = open("../bot/telegram_bot_token", "r").read().replace("\n","")
+telegram_bot_token = open("bot/telegram_bot_token", "r").read().replace("\n","")
 updater = Updater(telegram_bot_token,
                   use_context=True)
 bot = updater.bot

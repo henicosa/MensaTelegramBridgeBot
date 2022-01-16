@@ -2,3 +2,6 @@
 2022-01-15 19:43:25 GMT Ludwig queried bot
 2022-01-15 19:47:39 GMT Ludwig queried bot with watch info
 2022-01-15 20:23:44 GMT Ludwig queried bot with nächster folge 3754
+2022-01-16 11:18:03 GMT Ludwig queried bot with nächster folge 3755
+2022-01-16 11:18:03 GMT Ludwig queried bot with nächster folge 3755
+2022-01-16 11:18:04 GMT Ludwig queried bot with nächster folge 3755
