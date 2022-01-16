@@ -1,12 +1,5 @@
-
-# The CalDove Information Update System
-
-from pickle import TRUE
 from flask import Flask
 
-from datetime import datetime, timedelta, timezone
-
-from dateutil.relativedelta import relativedelta
 
 import subprocess
 
