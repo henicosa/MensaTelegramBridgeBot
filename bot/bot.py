@@ -58,6 +58,15 @@ def get_episode_url(folgennummer):
     url = "https://www.daserste.de/unterhaltung/soaps-telenovelas/sturm-der-liebe/videos/sturm-der-liebe-folge-" + folgennummer + "-video-104.html"
     if video_found(get_soup(url)):
         return url
+    url = "https://www.daserste.de/unterhaltung/soaps-telenovelas/sturm-der-liebe/videos/sturm-der-liebe-folge-" + folgennummer + "-video-102.html"
+    if video_found(get_soup(url)):
+        return url
+    url = "https://www.daserste.de/unterhaltung/soaps-telenovelas/sturm-der-liebe/videos/sturm-der-liebe-folge-" + folgennummer + "-video-103.html"
+    if video_found(get_soup(url)):
+        return url
+    url = "https://www.daserste.de/unterhaltung/soaps-telenovelas/sturm-der-liebe/videos/sturm-der-liebe-folge-" + folgennummer + "-video-101.html"
+    if video_found(get_soup(url)):
+        return url
     return "Not Found"
 """    url = "https://mediathekviewweb.de/#query=Sturm der Liebe " + folgennummer
     r = requests.get(url, headers=headers)
