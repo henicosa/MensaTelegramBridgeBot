@@ -28,20 +28,23 @@ def add_user(name, chatid):
         sql = 'INSERT INTO USER (name, chatid) values(?, ?)'
         database.execute(sql, (name, chatid))
 
+database = None
 
-databse_exists = exists('log/mensadaten.db')
-database = sl.connect('log/mensadaten.db')
-if not databse_exists:
-    init_database()
+def test():
 
-with database:
+    database_exists = exists('log/mensadaten.db')
+    database = sl.connect('log/mensadaten.db')
+    if not database_exists:
+        init_database()
 
-    database = database.cursor()
-    add_user("ludwig", "4q30974107")
-    add_user("52li", "3526225235102")
+    with database:
 
-    data = database.execute("SELECT * FROM USER")
-    for row in data:
-        print(row)
+        database = database.cursor()
+        add_user("ludwig", "4q30974107")
+        add_user("52li", "3526225235102")
+
+        data = database.execute("SELECT * FROM USER")
+        for row in data:
+            print(row)
 
 

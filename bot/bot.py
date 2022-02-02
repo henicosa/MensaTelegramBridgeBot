@@ -32,6 +32,8 @@ import datetime
 import logging
 import time
 
+from database import *
+
 # import web crawler
 from bs4 import BeautifulSoup
 import requests
@@ -82,20 +84,22 @@ def button(update: Update, context: CallbackContext) -> None:
     # Some clients may have trouble otherwise. See https://core.telegram.org/bots/api#callbackquery
     query.answer()
 
-    query.edit_message_text(text=f"Selected option: {query.data}")
+
+
+    #query.edit_message_text(text=f"Selected option: {query.data}")
 
 def generate_reply_markup(meal):
     meal_id = get_meal_name(meal)
-    markup = [
-        [
-            InlineKeyboardButton("😖", callback_data='igitt[+-+]'+meal_id),
-            InlineKeyboardButton("😐", callback_data='hmm[+-+]'+meal_id),
-            InlineKeyboardButton("😋", callback_data='mjam[+-+]'+meal_id),
-            InlineKeyboardButton("😍", callback_data='lecker[+-+]'+meal_id),  
-        ],
-            [InlineKeyboardButton("🔔 Abonnieren", callback_data='abo[+-+]' + meal_id)],
+    vote_link = get_vote_link(meal)
+    print(vote_link)
+    keyboard = [
+            [
+                InlineKeyboardButton("📝 Bewerten", url=vote_link),
+                InlineKeyboardButton("🔔 Abonnieren", callback_data="2"),
+            ],
         ]
-    return markup
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    return reply_markup
 
 def get_meals():
     r = requests.get(url, headers=headers)
@@ -104,8 +108,7 @@ def get_meals():
     if soup.findAll("div", class_="row px-3 mb-2 rowMeal"):
         for meal in soup.findAll("div", class_="row px-3 mb-2 rowMeal"):
             text = ""
-            keyboard = generate_reply_markup(meal)
-            reply_markup = InlineKeyboardMarkup(keyboard)
+            reply_markup = generate_reply_markup(meal)
             text += get_price_for_students(meal) + " " + get_meal_name(meal) + "\n"
             text += does_it_include_dead_animals(meal) # + " Bewerten: " + get_vote_link(meal) + "\n\n"
             meals.append({"text":text,"markup":reply_markup})
@@ -130,7 +133,7 @@ def get_price_for_students(meal):
     return "【" +  str(meal.find("div", class_="mealPreise").contents[0]).split(" ")[0] + " €】"
 
 def get_vote_link(meal):
-    return "<a href='" + meal.find("a", string="Gericht bewerten")["href"] + "'> Bewerten </a>"
+    return "https://www.stw-thueringen.de/" + meal.find("a", string="Gericht bewerten")["href"]
 
 # telegram methods
   
@@ -146,7 +149,11 @@ def mensa(update: Update, context: CallbackContext):
     meals = get_meals()
     update.message.reply_text("Hello, heute gibt es in der Mensa:")
     for meal in meals:
-        update.message.reply_text(text=meal["text"], reply_markup=meal["markup"])
+        print(meal["text"] +"\n")
+        print("send reply markup")
+        #update.message.reply_text('Please choose:', reply_markup=reply_markup)
+
+        update.message.reply_text(meal["text"], reply_markup=meal["markup"])
 
 
 
@@ -164,7 +171,7 @@ telegram_bot_token = open("bot/telegram_bot_token", "r").read().replace("\n","")
 updater = Updater(telegram_bot_token,
                   use_context=True)
 job_daily = updater.job_queue.run_daily(daily_menue, days=(0, 1, 2, 3, 4, 5, 6), time=datetime.time(hour=8, minute=00, second=00))
-uptime_heartbeat = updater.job_queue.run_daily(uptime_heartbeat, days=(0, 1, 2, 3, 4, 5, 6), time=datetime.time(hour=8, minute=00, second=00))
+# uptime_heartbeat = updater.job_queue.run_daily(uptime_heartbeat, days=(0, 1, 2, 3, 4, 5, 6), time=datetime.time(hour=8, minute=00, second=00))
 
 updater.dispatcher.add_handler(CommandHandler('mensa', mensa))
 updater.dispatcher.add_handler(CommandHandler('start', start))
