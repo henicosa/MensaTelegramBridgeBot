@@ -158,7 +158,10 @@ def help(update: Update, context: CallbackContext):
 
 def mensa(update: Update, context: CallbackContext):
     meals = get_meals()
-    update.message.reply_text("Hello, heute gibt es in der Mensa:")
+    if meals:
+        update.message.reply_text("Hello, heute gibt es in der Mensa:")
+    else:
+        update.message.reply_text("Sorry 😓 die Mensa scheint heute nichts anzubieten...")
     for meal in meals:
         print(meal["text"] +"\n")
         print("send reply markup")
@@ -171,10 +174,14 @@ def mensa(update: Update, context: CallbackContext):
 def daily_menue(context: CallbackContext):    
     meals = get_meals()
     # send message to all users
-    if len(meals) > 0:
-        for user in users.keys():
+    for user in users.keys():
+        if meals:
+            context.bot.send_message(chat_id=user, text="Hello, heute gibt es in der Mensa:")
             for meal in meals:
                 context.bot.send_message(chat_id=user, text=meal["text"], reply_markup=meal["markup"])
+        else:
+            context.bot.send_message(chat_id=user, text="Sorry 😓 die Mensa scheint heute nichts anzubieten...")
+            
 
 def uptime_heartbeat(context: CallbackContext):
     print("send alive signal to uptime bot")
