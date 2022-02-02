@@ -3,6 +3,7 @@
 """
 This will contain the API key we got from BotFather to specify in which bot we are adding functionalities to using our python code.
 """
+from urllib import request
 from telegram.ext.updater import Updater
 """
 This will invoke every time a bot receives an update i.e. message or command and will send the user a message.
@@ -46,6 +47,16 @@ logging.basicConfig(filename="log/botlog.txt",
                             level=logging.INFO)
 
 users = {}
+secrets = {}
+
+def load_secrets():
+    lines = open("bot/secrets", "r").readlines()
+    for line in lines:
+        if line[0] != "#":
+            line = line.replace("\n","")
+            pair = line.split(" = ")
+            secrets[pair[0]] = pair[1]
+    
 
 def log_access(update, action):
     # access log
@@ -94,8 +105,8 @@ def generate_reply_markup(meal):
     print(vote_link)
     keyboard = [
             [
-                InlineKeyboardButton("📝 Bewerten", url=vote_link),
-                InlineKeyboardButton("🔔 Abonnieren", callback_data="2"),
+                InlineKeyboardButton("📝  Bewerten", url=vote_link),
+                InlineKeyboardButton("🔔  Abonnieren", callback_data="2"),
             ],
         ]
     reply_markup = InlineKeyboardMarkup(keyboard)
@@ -164,14 +175,19 @@ def daily_menue(context: CallbackContext):
         for user in users.keys():
             for meal in meals:
                 context.bot.send_message(chat_id=user, text=meal["text"], reply_markup=meal["markup"])
+
+def uptime_heartbeat(context: CallbackContext):
+    print("send alive signal to uptime bot")
+    requests.get(secrets["uptime_url"])
+
+load_secrets()
     
 url = "https://www.stw-thueringen.de/mensen/weimar/mensa-am-park.html"
 headers = {'user-agent': 'mensatelegrambridgebot_2022'}
-telegram_bot_token = open("bot/telegram_bot_token", "r").read().replace("\n","")
-updater = Updater(telegram_bot_token,
+updater = Updater(secrets["telegram_bot_token"],
                   use_context=True)
-job_daily = updater.job_queue.run_daily(daily_menue, days=(0, 1, 2, 3, 4, 5, 6), time=datetime.time(hour=8, minute=00, second=00))
-# uptime_heartbeat = updater.job_queue.run_daily(uptime_heartbeat, days=(0, 1, 2, 3, 4, 5, 6), time=datetime.time(hour=8, minute=00, second=00))
+job_daily_call = updater.job_queue.run_daily(daily_menue, days=(0, 1, 2, 3, 4, 5, 6), time=datetime.time(hour=8, minute=00, second=00))
+uptime_heartbeat_call = updater.job_queue.run_repeating(uptime_heartbeat, datetime.timedelta(minutes=3))
 
 updater.dispatcher.add_handler(CommandHandler('mensa', mensa))
 updater.dispatcher.add_handler(CommandHandler('start', start))
