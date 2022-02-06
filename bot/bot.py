@@ -33,6 +33,8 @@ import datetime
 import logging
 import time
 
+import json
+
 from database import *
 
 # import web crawler
@@ -46,7 +48,6 @@ logging.basicConfig(filename="log/botlog.txt",
                             datefmt='%H:%M:%S',
                             level=logging.INFO)
 
-users = {}
 secrets = {}
 
 def load_secrets():
@@ -64,53 +65,14 @@ def log_access(update, action):
     current_time = time.localtime()
     access_log.write(time.strftime('%Y-%m-%d %H:%M:%S GMT', current_time) + " " + update.message.from_user.first_name + " queried bot with " + action + "\n")
     access_log.close()
-    
-def debug(update: Update, context: CallbackContext):
-    keyboard = [
-        [
-            InlineKeyboardButton("😍", callback_data='1'),
-            InlineKeyboardButton("😐", callback_data='2'),
-            InlineKeyboardButton("😖", callback_data='3'),
-        ],
-        [InlineKeyboardButton("Abonnieren", callback_data='3')],
-    ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
 
-    update.message.reply_text('Please choose:', reply_markup=reply_markup)
-	#print("debug triggered")
-	#custom_keyboard = [['top-left', 'top-right'], ['bottom-left', 'bottom-right']]
-	#user = update.message.chat.id
-	#reply_markup = telegram.ReplyKeyboardMarkup(custom_keyboard)
-	#print(context.bot)
-	#message = "Hi there"
-	#context.bot.send_message(chat_id=user, text=message)
-	#context.bot.send_message(chat_id=chat_id, text="Test message")
-	#context.bot.send_message(chat_id=chat_id, text="Custom Keyboard Test", reply_markup=reply_markup)
-
-def button(update: Update, context: CallbackContext) -> None:
-    """Parses the CallbackQuery and updates the message text."""
-    query = update.callback_query
-
-    # CallbackQueries need to be answered, even if no notification to the user is needed
-    # Some clients may have trouble otherwise. See https://core.telegram.org/bots/api#callbackquery
-    query.answer()
-
-
-
-    #query.edit_message_text(text=f"Selected option: {query.data}")
-
-def generate_reply_markup(meal):
-    meal_id = get_meal_name(meal)
-    vote_link = get_vote_link(meal)
-    print(vote_link)
-    keyboard = [
-            [
-                InlineKeyboardButton("📝  Bewerten", url=vote_link),
-                InlineKeyboardButton("🔔  Abonnieren", callback_data="2"),
-            ],
-        ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    return reply_markup
+######################################
+#
+#
+#
+# web requests methods
+#
+######################################
 
 def get_meals():
     r = requests.get(url, headers=headers)
@@ -120,8 +82,8 @@ def get_meals():
         for meal in soup.findAll("div", class_="row px-3 mb-2 rowMeal"):
             text = ""
             reply_markup = generate_reply_markup(meal)
-            text += get_price_for_students(meal) + " " + get_meal_name(meal) + "\n"
-            text += does_it_include_dead_animals(meal) # + " Bewerten: " + get_vote_link(meal) + "\n\n"
+            text += get_price_for_students(meal) + "   " + does_it_include_dead_animals(meal) + "\n\n"
+            text += get_meal_name(meal) # + " Bewerten: " + get_vote_link(meal) + "\n\n"
             meals.append({"text":text,"markup":reply_markup})
     return meals
 
@@ -146,22 +108,76 @@ def get_price_for_students(meal):
 def get_vote_link(meal):
     return "https://www.stw-thueringen.de/" + meal.find("a", string="Gericht bewerten")["href"]
 
+######################################
+#
+#
+#
 # telegram methods
-  
+#
+######################################
+
+def debug(update: Update, context: CallbackContext):
+    keyboard = [
+        [
+            InlineKeyboardButton("😍", callback_data='1'),
+            InlineKeyboardButton("😐", callback_data='2'),
+            InlineKeyboardButton("😖", callback_data='3'),
+        ],
+        [InlineKeyboardButton("Abonnieren", callback_data='3')],
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
+    update.message.reply_text('Please choose:', reply_markup=reply_markup)
+
+
+def button(update: Update, context: CallbackContext) -> None:
+    """Parses the CallbackQuery and updates the message text."""
+    query = update.callback_query
+
+    # CallbackQueries need to be answered, even if no notification to the user is needed
+    # Some clients may have trouble otherwise. See https://core.telegram.org/bots/api#callbackquery
+    query.answer()
+    #query.edit_message_text(text=f"Selected option: {query.data}")
+
+# generate Reply markup for a specific meal
+def generate_reply_markup(meal):
+    meal_id = get_meal_name(meal)
+    vote_link = get_vote_link(meal)
+    print(vote_link)
+    keyboard = [
+            [
+                InlineKeyboardButton("📝  Bewerten", url=vote_link),
+                InlineKeyboardButton("🔔  Abonnieren", callback_data="2"),
+            ],
+        ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    return reply_markup
+
+# start conversation with the bot
 def start(update: Update, context: CallbackContext):
     log_access(update, "start")
-    users[update.message.chat.id] = update.message.from_user
+    #users[update.message.chat.id] = update.message.from_user
+    db.add_user_if_unknown(update)
     update.message.reply_text("Mjamm... Ich bin dein Speiseplanbot und versorge dich täglich um 8 Uhr oder durch den Befehl /mensa mit dem heutigen Angebot in der Mensa am Park. Guten Appetit!")
 
 def help(update: Update, context: CallbackContext):
+    log_access(update, "help")
     update.message.reply_text("Es gibt eigentlich nicht viel über mich zu erzählen. Ich schicke dir täglich um 8 Uhr das Speisenangebot, wenn es etwas in der Mensa gibt.")
 
+def backup(update: Update, context: CallbackContext):
+    log_access(update, "backup")
+    backup_dicts_to_json()
+    update.message.reply_text("Backup fertig!")
+
+
+
 def mensa(update: Update, context: CallbackContext):
+    log_access(update, "mensa")
     meals = get_meals()
     if meals:
-        update.message.reply_text("Hello, heute gibt es in der Mensa:")
+        update.message.reply_text("📣 Hello, heute gibt es in der Mensa:")
     else:
-        update.message.reply_text("Sorry 😓 die Mensa scheint heute nichts anzubieten...")
+        update.message.reply_text("📣 Sorry 😓 die Mensa scheint heute nichts anzubieten...")
     for meal in meals:
         print(meal["text"] +"\n")
         print("send reply markup")
@@ -174,20 +190,40 @@ def mensa(update: Update, context: CallbackContext):
 def daily_menue(context: CallbackContext):    
     meals = get_meals()
     # send message to all users
-    for user in users.keys():
+    for chat_id in db.users.keys():
         if meals:
-            context.bot.send_message(chat_id=user, text="Hello, heute gibt es in der Mensa:")
+            context.bot.send_message(chat_id=chat_id, text="📣 Hello, heute gibt es in der Mensa:")
             for meal in meals:
-                context.bot.send_message(chat_id=user, text=meal["text"], reply_markup=meal["markup"])
+                context.bot.send_message(chat_id=chat_id, text=meal["text"], reply_markup=meal["markup"])
         else:
-            context.bot.send_message(chat_id=user, text="Sorry 😓 die Mensa scheint heute nichts anzubieten...")
+            context.bot.send_message(chat_id=chat_id, text="📣 Sorry 😓 die Mensa scheint heute nichts für dich anzubieten...")
             
 
 def uptime_heartbeat(context: CallbackContext):
     print("send alive signal to uptime bot")
     requests.get(secrets["uptime_url"])
 
+def scheduled_backup(context: CallbackContext):
+    backup_dicts_to_json()
+
+def backup_dicts_to_json():
+    print("start backup")
+    json_object = json.dumps(db.users, indent=4)
+    print("json object created")
+    with open("log/users.json", "w") as outfile:
+        outfile.write(json_object)
+        print("wrote it to file")
+
+def restore_dicts_if_possible():
+    if exists('log/users.json'):
+        with open('log/users.json', 'r') as openfile:
+            dict_object = json.load(openfile)
+            db.users = dict_object
+    
+
 load_secrets()
+db = Database()
+restore_dicts_if_possible()
     
 url = "https://www.stw-thueringen.de/mensen/weimar/mensa-am-park.html"
 headers = {'user-agent': 'mensatelegrambridgebot_2022'}
@@ -195,12 +231,14 @@ updater = Updater(secrets["telegram_bot_token"],
                   use_context=True)
 job_daily_call = updater.job_queue.run_daily(daily_menue, days=(0, 1, 2, 3, 4, 5, 6), time=datetime.time(hour=8, minute=00, second=00))
 uptime_heartbeat_call = updater.job_queue.run_repeating(uptime_heartbeat, datetime.timedelta(minutes=3))
+backup_dicts_to_json_call = updater.job_queue.run_repeating(scheduled_backup, datetime.timedelta(hours=3))
 
 updater.dispatcher.add_handler(CommandHandler('mensa', mensa))
 updater.dispatcher.add_handler(CommandHandler('start', start))
 updater.dispatcher.add_handler(CommandHandler('help', help))
 updater.dispatcher.add_handler(CallbackQueryHandler(button))
 updater.dispatcher.add_handler(CommandHandler('debug', debug))
+updater.dispatcher.add_handler(CommandHandler('backup', backup))
 #job_daily = job_queue.run_daily(daily_suggestion, days=(0, 1, 2, 3, 4, 5, 6), time=datetime.time(hour=8, minute=00, second=00))
 
 updater.start_polling()
