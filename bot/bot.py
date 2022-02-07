@@ -5,6 +5,7 @@ This will contain the API key we got from BotFather to specify in which bot we a
 """
 from urllib import request
 from telegram.ext.updater import Updater
+
 """
 This will invoke every time a bot receives an update i.e. message or command and will send the user a message.
 """
@@ -175,9 +176,9 @@ def mensa(update: Update, context: CallbackContext):
     log_access(update, "mensa")
     meals = get_meals()
     if meals:
-        update.message.reply_text("📣 Hello, heute gibt es in der Mensa:")
+        update.message.reply_text("Hello, heute gibt es in der Mensa:")
     else:
-        update.message.reply_text("📣 Sorry 😓 die Mensa scheint heute nichts anzubieten...")
+        update.message.reply_text("Sorry 😓 die Mensa scheint heute nichts anzubieten...")
     for meal in meals:
         print(meal["text"] +"\n")
         print("send reply markup")
@@ -185,19 +186,52 @@ def mensa(update: Update, context: CallbackContext):
 
         update.message.reply_text(meal["text"], reply_markup=meal["markup"])
 
+def dm(update: Update, context: CallbackContext):
+    daily_menue(CallbackContext)
 
-
-def daily_menue(context: CallbackContext):    
+def daily_menue(context: CallbackContext):
+    print("Send scheduled messages")    
     meals = get_meals()
     # send message to all users
     for chat_id in db.users.keys():
-        if meals:
-            context.bot.send_message(chat_id=chat_id, text="📣 Hello, heute gibt es in der Mensa:")
-            for meal in meals:
-                context.bot.send_message(chat_id=chat_id, text=meal["text"], reply_markup=meal["markup"])
-        else:
-            context.bot.send_message(chat_id=chat_id, text="📣 Sorry 😓 die Mensa scheint heute nichts für dich anzubieten...")
-            
+            if meals:
+                print("Send scheduled message with menue")
+                deliver_message_safely(bot, chat_id, "📣 Hello, heute gibt es in der Mensa:")
+                for meal in meals:
+                    deliver_markup_message_safely(bot, chat_id, meal["text"], meal["markup"])
+            else:
+                print("Send scheduled message without menue")
+                deliver_message_safely(bot, chat_id, "📣 Sorry 😓 die Mensa scheint heute nichts für dich anzubieten...")
+                
+def deliver_message_safely(bot, chat_id, text):
+    print("deliver message safely: " + text)
+    message_delivered = False
+    attempts = 0
+    while not message_delivered and attempts < 15:
+        time.sleep(1)
+        attempts+= 1
+        print("with " + str(attempts) + " attempts")
+        try:
+            bot.send_message(chat_id=chat_id, text=text)
+            message_delivered = True
+        except Exception as e: 
+            print(e)
+            message_delivered = False
+
+def deliver_markup_message_safely(bot, chat_id, text, markup):
+    print("deliver message safely: " + text)
+    message_delivered = False
+    attempts = 0
+    while not message_delivered and attempts < 15:
+        time.sleep(1)
+        attempts+= 1
+        try:
+            bot.send_message(chat_id=chat_id, text=text, reply_markup=markup)
+            message_delivered = True
+        except:
+            message_delivered = False
+
+    
 
 def uptime_heartbeat(context: CallbackContext):
     print("send alive signal to uptime bot")
@@ -229,15 +263,18 @@ url = "https://www.stw-thueringen.de/mensen/weimar/mensa-am-park.html"
 headers = {'user-agent': 'mensatelegrambridgebot_2022'}
 updater = Updater(secrets["telegram_bot_token"],
                   use_context=True)
-job_daily_call = updater.job_queue.run_daily(daily_menue, days=(0, 1, 2, 3, 4, 5, 6), time=datetime.time(hour=8, minute=00, second=00))
+job_daily_call = updater.job_queue.run_daily(daily_menue, days=(0, 1, 2, 3, 4, 5, 6), time=datetime.time(hour=7, minute=00, second=00))
 uptime_heartbeat_call = updater.job_queue.run_repeating(uptime_heartbeat, datetime.timedelta(minutes=3))
 backup_dicts_to_json_call = updater.job_queue.run_repeating(scheduled_backup, datetime.timedelta(hours=3))
+
+bot = updater.dispatcher.bot
 
 updater.dispatcher.add_handler(CommandHandler('mensa', mensa))
 updater.dispatcher.add_handler(CommandHandler('start', start))
 updater.dispatcher.add_handler(CommandHandler('help', help))
 updater.dispatcher.add_handler(CallbackQueryHandler(button))
 updater.dispatcher.add_handler(CommandHandler('debug', debug))
+updater.dispatcher.add_handler(CommandHandler('dm', dm))
 updater.dispatcher.add_handler(CommandHandler('backup', backup))
 #job_daily = job_queue.run_daily(daily_suggestion, days=(0, 1, 2, 3, 4, 5, 6), time=datetime.time(hour=8, minute=00, second=00))
 
