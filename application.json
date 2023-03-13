@@ -1,0 +1,8 @@
+{
+    "application_name": "Mensa am Park Bot",
+    "application_type": "Telegram Bot",
+    "application_type_short": "Bot",
+    "application_introduction": "Dieser Telegram-Bot sendet einmal täglich das aktuelle Menü in der Mensa am Park.",
+    "application_repo_link": "https://github.com/henicosa",
+    "application_version": "1.0"
+}

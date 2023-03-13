@@ -43,11 +43,13 @@ from bs4 import BeautifulSoup
 import requests
 
 
-logging.basicConfig(filename="log/botlog.txt",
+logging.basicConfig(filename="log/bot_log.txt",
                             filemode='a',
                             format='%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s',
                             datefmt='%H:%M:%S',
                             level=logging.INFO)
+
+
 
 secrets = {}
 
@@ -81,11 +83,12 @@ def get_meals():
     meals = []
     if soup.findAll("div", class_="row px-3 mb-2 rowMeal"):
         for meal in soup.findAll("div", class_="row px-3 mb-2 rowMeal"):
-            text = ""
-            reply_markup = generate_reply_markup(meal)
-            text += get_price_for_students(meal) + "   " + does_it_include_dead_animals(meal) + "\n\n"
-            text += get_meal_name(meal) # + " Bewerten: " + get_vote_link(meal) + "\n\n"
-            meals.append({"text":text,"markup":reply_markup})
+            if "Vegetarisch" in meal or "Vegan" in meal:
+                text = ""
+                reply_markup = generate_reply_markup(meal)
+                text += get_price_for_students(meal) + "   " + does_it_include_dead_animals(meal) + "\n\n"
+                text += get_meal_name(meal) # + " Bewerten: " + get_vote_link(meal) + "\n\n"
+                meals.append({"text":text,"markup":reply_markup})
     return meals
 
 def does_it_include_dead_animals(meal):
@@ -207,7 +210,7 @@ def deliver_message_safely(bot, chat_id, text):
     print("deliver message safely: " + text)
     message_delivered = False
     attempts = 0
-    while not message_delivered and attempts < 15:
+    while not message_delivered and attempts < 1500:
         time.sleep(1)
         attempts+= 1
         print("with " + str(attempts) + " attempts")

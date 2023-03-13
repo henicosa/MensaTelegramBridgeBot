@@ -2,3 +2,4 @@ telegram_bot_token
 secrets
 log/*
 !log/.gitkeep 
+__pycache__
