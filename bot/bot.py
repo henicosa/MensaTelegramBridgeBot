@@ -36,8 +36,6 @@ import time
 
 import json
 
-from database import *
-
 # import web crawler
 from bs4 import BeautifulSoup
 import requests
@@ -83,7 +81,7 @@ def get_meals():
     meals = []
     if soup.findAll("div", class_="row px-3 mb-2 rowMeal"):
         for meal in soup.findAll("div", class_="row px-3 mb-2 rowMeal"):
-            if "Vegetarisch" in meal or "Vegan" in meal:
+            if "Vegetarisch" in str(meal) or "Vegan" in str(meal):
                 text = ""
                 reply_markup = generate_reply_markup(meal)
                 text += get_price_for_students(meal) + "   " + does_it_include_dead_animals(meal) + "\n\n"
@@ -147,7 +145,6 @@ def button(update: Update, context: CallbackContext) -> None:
 def generate_reply_markup(meal):
     meal_id = get_meal_name(meal)
     vote_link = get_vote_link(meal)
-    print(vote_link)
     keyboard = [
             [
                 InlineKeyboardButton("📝  Bewerten", url=vote_link),
@@ -257,30 +254,32 @@ def restore_dicts_if_possible():
             dict_object = json.load(openfile)
             db.users = dict_object
     
-
-load_secrets()
-db = Database()
-restore_dicts_if_possible()
-    
 url = "https://www.stw-thueringen.de/mensen/weimar/mensa-am-park.html"
 headers = {'user-agent': 'mensatelegrambridgebot_2022'}
-updater = Updater(secrets["telegram_bot_token"],
-                  use_context=True)
-job_daily_call = updater.job_queue.run_daily(daily_menue, days=(0, 1, 2, 3, 4, 5, 6), time=datetime.time(hour=7, minute=00, second=00))
-uptime_heartbeat_call = updater.job_queue.run_repeating(uptime_heartbeat, datetime.timedelta(minutes=3))
-backup_dicts_to_json_call = updater.job_queue.run_repeating(scheduled_backup, datetime.timedelta(hours=3))
 
-bot = updater.dispatcher.bot
+if __name__ == "__main__":
+    load_secrets()
+    from database import *
+    db = Database()
+    restore_dicts_if_possible()
+    
+    updater = Updater(secrets["telegram_bot_token"],
+                    use_context=True)
+    job_daily_call = updater.job_queue.run_daily(daily_menue, days=(0, 1, 2, 3, 4, 5, 6), time=datetime.time(hour=7, minute=00, second=00))
+    uptime_heartbeat_call = updater.job_queue.run_repeating(uptime_heartbeat, datetime.timedelta(minutes=3))
+    backup_dicts_to_json_call = updater.job_queue.run_repeating(scheduled_backup, datetime.timedelta(hours=3))
 
-updater.dispatcher.add_handler(CommandHandler('mensa', mensa))
-updater.dispatcher.add_handler(CommandHandler('start', start))
-updater.dispatcher.add_handler(CommandHandler('help', help))
-updater.dispatcher.add_handler(CallbackQueryHandler(button))
-updater.dispatcher.add_handler(CommandHandler('debug', debug))
-updater.dispatcher.add_handler(CommandHandler('dm', dm))
-updater.dispatcher.add_handler(CommandHandler('backup', backup))
-#job_daily = job_queue.run_daily(daily_suggestion, days=(0, 1, 2, 3, 4, 5, 6), time=datetime.time(hour=8, minute=00, second=00))
+    bot = updater.dispatcher.bot
 
-updater.start_polling()
-updater.idle()
+    updater.dispatcher.add_handler(CommandHandler('mensa', mensa))
+    updater.dispatcher.add_handler(CommandHandler('start', start))
+    updater.dispatcher.add_handler(CommandHandler('help', help))
+    updater.dispatcher.add_handler(CallbackQueryHandler(button))
+    updater.dispatcher.add_handler(CommandHandler('debug', debug))
+    updater.dispatcher.add_handler(CommandHandler('dm', dm))
+    updater.dispatcher.add_handler(CommandHandler('backup', backup))
+    #job_daily = job_queue.run_daily(daily_suggestion, days=(0, 1, 2, 3, 4, 5, 6), time=datetime.time(hour=8, minute=00, second=00))
+
+    updater.start_polling()
+    updater.idle()
 

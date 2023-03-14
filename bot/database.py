@@ -89,5 +89,4 @@ def test(database):
         for row in data:
             print(row)
 
-
 database = load_database()
